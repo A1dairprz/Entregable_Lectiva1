@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="es" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Brink's Operations - Dashboard & Analítica Ejecutiva de Rutas</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Leaflet CSS & JS CDN (Mapa) -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #0f172a; color: #f8fafc; }
+        .glass-card { background: rgba(30, 41, 59, 0.85); backdrop-filter: blur(12px); border: 1px solid rgba(51, 65, 85, 0.8); }
+        
+        /* Imagen de Fondo para las Secciones */
+        .hero-bg {
+            background-image: linear-gradient(to bottom, rgba(15, 23, 42, 0.82), rgba(15, 23, 42, 0.95)), url('https://lh3.googleusercontent.com/d/1WPGeaEqWOm4HghtJmuY30Q7topeK5auT');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+        }
+
+        .monitoreo-bg {
+            background-image: linear-gradient(to bottom, rgba(15, 23, 42, 0.88), rgba(15, 23, 42, 0.95)), url('https://lh3.googleusercontent.com/d/1WPGeaEqWOm4HghtJmuY30Q7topeK5auT');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+        }
+
+        /* Corrección para la visualización de Leaflet */
+        #mapaCalor { 
+            height: 350px !important; 
+            width: 100% !important; 
+            border-radius: 0.75rem; 
+            z-index: 10;
+        }
+        .leaflet-container { background: #0f172a !important; }
+    </style>
+</head>
+<body class="antialiased min-h-screen flex flex-col">
+
+    <!-- Navegación Ejecutiva -->
+    <nav class="sticky top-0 z-50 glass-card border-b border-slate-800">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center gap-3">
+                    <span class="p-2 bg-blue-600 rounded-lg text-white font-black text-xl tracking-wider">BRINK'S</span>
+                    <div>
+                        <span class="text-sm font-bold text-white block leading-none">Global Logistics & Security</span>
+                        <span class="text-xs text-slate-400">Centro de Inteligencia Operativa & Telemetría</span>
+                    </div>
+                </div>
+                <div class="hidden md:flex space-x-6 text-sm font-medium">
+                    <a href="#home" class="text-slate-300 hover:text-blue-400 transition">Inicio & Estrategia</a>
+                    <a href="#dashboard" class="text-slate-300 hover:text-blue-400 transition">Dashboard Interactivo</a>
+                    <a href="#investigadores" class="text-slate-300 hover:text-blue-400 transition">Monitoreo de Flotas</a>
+                    <a href="#conclusion" class="text-slate-300 hover:text-blue-400 transition">Conclusión Gerencial</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- SECCIÓN 1: HOME & HALLAZGOS REPRESENTATIVOS (Con Imagen de Fondo) -->
+    <section id="home" class="hero-bg py-16 px-4 sm:px-6 lg:px-8 border-b border-slate-800">
+        <div class="max-w-7xl mx-auto space-y-10 w-full">
+            <!-- Hero Header -->
+            <div class="text-center max-w-3xl mx-auto space-y-4">
+                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-blue-950/80 text-blue-300 border border-blue-700/60 backdrop-blur-md">
+                    Análisis de Operaciones y Algoritmos VRPTW
+                </span>
+                <h1 class="text-3xl sm:text-5xl font-extrabold tracking-tight text-white leading-tight drop-shadow-md">
+                    Optimización de Flotas, Costos ABC y Rutas Seguras
+                </h1>
+                <p class="text-slate-300 text-base sm:text-lg drop-shadow">
+                    Un modelo de analítica de datos en tiempo real que equilibra el menor costo de distribución con la máxima mitigación de riesgos mediante aleatoriedad controlada y telemetría IoT.
+                </p>
+            </div>
+
+            <!-- KPIs Dinámicos -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+                <div class="glass-card p-5 rounded-2xl shadow-xl">
+                    <span class="text-xs font-semibold text-slate-300 uppercase tracking-wider">Índice de Aleatoriedad</span>
+                    <div id="kpi-aleatoriedad" class="text-3xl font-black text-blue-400 mt-2">94.8%</div>
+                    <p class="text-xs text-emerald-400 mt-1">Impredecibilidad contra atracos</p>
+                </div>
+                <div class="glass-card p-5 rounded-2xl shadow-xl">
+                    <span class="text-xs font-semibold text-slate-300 uppercase tracking-wider">Ahorro Combustible (ABC)</span>
+                    <div id="kpi-combustible" class="text-3xl font-black text-emerald-400 mt-2">-18.2%</div>
+                    <p class="text-xs text-slate-300 mt-1">Optimización por telemetría IoT</p>
+                </div>
+                <div class="glass-card p-5 rounded-2xl shadow-xl">
+                    <span class="text-xs font-semibold text-slate-300 uppercase tracking-wider">Cumplimiento VRPTW</span>
+                    <div id="kpi-vrptw" class="text-3xl font-black text-purple-400 mt-2">99.4%</div>
+                    <p class="text-xs text-purple-300 mt-1">Ventanas en bóvedas de clientes</p>
+                </div>
+                <div class="glass-card p-5 rounded-2xl shadow-xl">
+                    <span class="text-xs font-semibold text-slate-300 uppercase tracking-wider">Alertas por Geofence</span>
+                    <div id="kpi-geofence" class="text-3xl font-black text-amber-400 mt-2">3 alertas</div>
+                    <p class="text-xs text-amber-300 mt-1">Desvíos detectados a tiempo</p>
+                </div>
+            </div>
+
+            <!-- Hallazgos Representativos -->
+            <div class="glass-card p-6 sm:p-8 rounded-2xl border border-slate-700/80 shadow-2xl">
+                <h2 class="text-xl font-bold text-white mb-6 flex items-center gap-2">
+                    <svg class="w-6 h-6 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                    Pilares Estratégicos del Análisis de Datos en Brink's
+                </h2>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="bg-slate-900/80 p-5 rounded-xl border border-slate-800 space-y-2 backdrop-blur-sm">
+                        <span class="text-xs font-bold text-blue-400 uppercase">1. Algoritmos VRPTW Modificados</span>
+                        <h3 class="font-semibold text-white">Aleatoriedad Controlada</h3>
+                        <p class="text-xs text-slate-300 leading-relaxed">
+                            Se eliminan las secuencias fijas de trayectos. El modelo cambia las frecuencias y secuencias diarias manteniendo el 100% de cumplimiento en la apertura/cierre de bóvedas.
+                        </p>
+                    </div>
+                    <div class="bg-slate-900/80 p-5 rounded-xl border border-slate-800 space-y-2 backdrop-blur-sm">
+                        <span class="text-xs font-bold text-blue-400 uppercase">2. Modelos de Costo ABC</span>
+                        <h3 class="font-semibold text-white">Telemetría IoT Aplicada</h3>
+                        <p class="text-xs text-slate-300 leading-relaxed">
+                            El monitoreo del motor en paradas prolongadas y el desgaste por blindaje reduce drásticamente el consumo de combustible y extiende la vida útil de frenos y neumáticos.
+                        </p>
+                    </div>
+                    <div class="bg-slate-900/80 p-5 rounded-xl border border-slate-800 space-y-2 backdrop-blur-sm">
+                        <span class="text-xs font-bold text-blue-400 uppercase">3. Geofencing Activo</span>
+                        <h3 class="font-semibold text-white">Mitigación Dinámica de Riesgos</h3>
+                        <p class="text-xs text-slate-300 leading-relaxed">
+                            Perímetros virtuales monitorean desvíos en tiempo real. Cualquier anomalía superior al 5% genera bloqueos remotos de motor y avisos automatizados a la central policial.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SECCIÓN 2: DASHBOARD INTERACTIVO -->
+    <section id="dashboard" class="py-12 bg-slate-950 border-b border-slate-800">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
+            <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
+                <div>
+                    <h2 class="text-2xl font-extrabold text-white">Dashboard de Operaciones y Seguridad</h2>
+                    <p class="text-xs text-slate-400 mt-1">Simulación analítica del balance entre costos de distribución, geolocalización y predictibilidad.</p>
+                </div>
+                
+                <!-- Panel de Filtros Interactivos (Zona + Mes) -->
+                <div class="flex flex-wrap items-center gap-3">
+                    <!-- Selector de Mes -->
+                    <div class="flex items-center gap-2 bg-slate-900 px-3 py-1.5 rounded-xl border border-slate-800">
+                        <label for="select-mes" class="text-xs text-slate-400 font-semibold">Mes:</label>
+                        <select id="select-mes" onchange="aplicarFiltros()" class="bg-slate-800 text-xs font-semibold text-white rounded-lg px-2 py-1 border border-slate-700 outline-none cursor-pointer">
+                            <option value="enero">Enero - Febrero</option>
+                            <option value="febrero">Marzo - Abril</option>
+                            <option value="marzo" selected>Mayo - Junio</option>
+                            <option value="abril">Julio - Agosto</option>
+                        </select>
+                    </div>
+
+                    <!-- Botones de Zona -->
+                    <div class="flex gap-1 bg-slate-900 p-1 rounded-xl border border-slate-800">
+                        <button onclick="cambiarZona('todos')" id="btn-todos" class="px-3 py-1.5 text-xs font-semibold rounded-lg bg-blue-600 text-white transition">Todas las Zonas</button>
+                        <button onclick="cambiarZona('urbano')" id="btn-urbano" class="px-3 py-1.5 text-xs font-semibold rounded-lg text-slate-400 hover:text-white transition">Zona Norte</button>
+                        <button onclick="cambiarZona('rural')" id="btn-rural" class="px-3 py-1.5 text-xs font-semibold rounded-lg text-slate-400 hover:text-white transition">Corredor Sur</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Mapa de Calor -->
+            <div class="glass-card p-6 rounded-2xl border border-slate-700">
+                <div class="flex justify-between items-center mb-4">
+                    <div>
+                        <h3 class="text-sm font-bold text-white">Mapa de Calor: Concentración y Frecuencia de Rutas</h3>
+                        <p class="text-xs text-slate-400">Geolocalización de paradas en bóvedas y cuadrantes de mayor densidad vehicular.</p>
+                    </div>
+                    <span class="text-xs bg-blue-950 text-blue-300 border border-blue-800 px-3 py-1 rounded-full font-mono">GPS Live Telemetry</span>
+                </div>
+                <div id="mapaCalor"></div>
+            </div>
+
+            <!-- Gráficos -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div class="glass-card p-6 rounded-2xl">
+                    <h3 class="text-sm font-bold text-white mb-1">Costo Operativo vs. Índice de Predictibilidad (Riesgo)</h3>
+                    <p class="text-xs text-slate-400 mb-4">Comportamiento semanal al aplicar rutas estocásticas impredecibles.</p>
+                    <div class="relative h-64">
+                        <canvas id="chartBrechas"></canvas>
+                    </div>
+                </div>
+                <div class="glass-card p-6 rounded-2xl">
+                    <h3 class="text-sm font-bold text-white mb-1">Estructura de Reducción de Costos (Modelo ABC)</h3>
+                    <p class="text-xs text-slate-400 mb-4">Desglose de ahorros generados por telemetría IoT.</p>
+                    <div class="relative h-64">
+                        <canvas id="chartPerfiles"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tabla de Indicadores -->
+            <div class="glass-card rounded-2xl overflow-hidden p-6">
+                <h3 class="text-sm font-bold text-white mb-4">Estado del Monitoreo por Cuadrante Operativo</h3>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-xs text-left text-slate-300">
+                        <thead class="uppercase bg-slate-900/80 text-slate-400 font-semibold border-b border-slate-800">
+                            <tr>
+                                <th class="p-3">Código Vehículo</th>
+                                <th class="p-3">Valor Custodiado ($USD)</th>
+                                <th class="p-3">Ventana VRPTW</th>
+                                <th class="p-3">Nivel de Predictibilidad</th>
+                                <th class="p-3">Estado Operativo</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabla-cuerpo" class="divide-y divide-slate-800">
+                            <!-- Inyectado dinámicamente -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SECCIÓN 3: MONITOREO Y REGISTRO DE UNIDADES (Con Imagen de Fondo) -->
+    <section id="investigadores" class="monitoreo-bg py-16 px-4 sm:px-6 lg:px-8 border-b border-slate-800 w-full">
+        <div class="max-w-4xl mx-auto">
+            <div class="glass-card p-6 sm:p-10 rounded-2xl border border-slate-700/80 shadow-2xl">
+                <div class="text-center max-w-xl mx-auto mb-8 space-y-2">
+                    <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-blue-950/90 text-blue-300 border border-blue-700/60 font-mono">
+                        Security Operations Center
+                    </span>
+                    <h2 class="text-2xl font-bold text-white drop-shadow">Registro de Inspección y Monitoreo de Flotas</h2>
+                    <p class="text-xs text-slate-300">Plataforma de reporte para auditores de seguridad, escoltas y personal de telemetría.</p>
+                </div>
+
+                <form id="formInvestigador" onsubmit="registrarInvestigador(event)" class="space-y-4">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-300 mb-1">Nombre del Inspector / Operador *</label>
+                            <input type="text" required class="w-full bg-slate-900/90 border border-slate-700 rounded-lg p-2.5 text-xs text-white focus:ring-2 focus:ring-blue-500 outline-none backdrop-blur-sm" placeholder="Ej. Carlos Mendoza">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-300 mb-1">Correo Corporativo *</label>
+                            <input type="email" required class="w-full bg-slate-900/90 border border-slate-700 rounded-lg p-2.5 text-xs text-white focus:ring-2 focus:ring-blue-500 outline-none backdrop-blur-sm" placeholder="operaciones@brinks.com">
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-300 mb-1">Unidad Blindada / Vehículo *</label>
+                            <select required class="w-full bg-slate-900/90 border border-slate-700 rounded-lg p-2.5 text-xs text-white focus:ring-2 focus:ring-blue-500 outline-none backdrop-blur-sm cursor-pointer">
+                                <option value="">Selecciona el código del camión</option>
+                                <option value="brk9012">BRK-9012 (Camión Pesado)</option>
+                                <option value="brk4401">BRK-4401 (Unidad Mediana)</option>
+                                <option value="brk7822">BRK-7822 (Escolta / Valores Altos)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-300 mb-1">Nivel de Novedad Registrada</label>
+                            <select required class="w-full bg-slate-900/90 border border-slate-700 rounded-lg p-2.5 text-xs text-white focus:ring-2 focus:ring-blue-500 outline-none backdrop-blur-sm cursor-pointer">
+                                <option value="rutina">Inspección de Rutina (Sin novedad)</option>
+                                <option value="desvio">Desvío por Tráfico / Geofence</option>
+                                <option value="telemetria">Falla de Telemetría / Sensores</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-300 mb-1">Observaciones de la Ruta y Consumo</label>
+                        <textarea rows="3" class="w-full bg-slate-900/90 border border-slate-700 rounded-lg p-2.5 text-xs text-white focus:ring-2 focus:ring-blue-500 outline-none backdrop-blur-sm" placeholder="Reporta variaciones de tiempos en bóvedas o consumo anormal de combustible..."></textarea>
+                    </div>
+                    <button type="submit" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 px-4 rounded-xl text-xs uppercase tracking-wider transition shadow-lg">
+                        Enviar Reporte a Central de Monitoreo
+                    </button>
+                </form>
+
+                <div id="mensajeExito" class="hidden mt-4 p-4 bg-emerald-950/90 border border-emerald-800 rounded-xl text-center backdrop-blur-sm">
+                    <p class="text-xs text-emerald-300 font-semibold">¡Reporte registrado correctamente en la Central Brink's! Datos sincronizados con la matriz de riesgos.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SECCIÓN 4: CONCLUSIÓN GERENCIAL -->
+    <section id="conclusion" class="py-8 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full mb-12">
+        <div class="bg-gradient-to-r from-blue-950 via-slate-900 to-slate-950 border border-blue-800/80 p-6 sm:p-8 rounded-2xl shadow-xl space-y-3">
+            <div class="flex items-center gap-2">
+                <span class="h-2.5 w-2.5 rounded-full bg-blue-400 animate-pulse"></span>
+                <h2 class="text-xs font-bold uppercase tracking-widest text-blue-400">Conclusión Gerencial Estratégica</h2>
+            </div>
+            <p class="text-slate-200 text-sm sm:text-base leading-relaxed">
+                El análisis de datos aplicado a la flota de Brink's demuestra que la combinación de telemetría IoT, algoritmos de aleatoriedad controlada y modelos de optimización VRPTW transforma la logística tradicional en una operación de inteligencia de alta precisión. Esta estrategia redujo los costos operativos en un 18% y disminuyó la predictibilidad de rutas a menos del 15%, maximizando el blindaje de seguridad sin afectar el cumplimiento del 99.4% en las ventanas de tiempo comerciales.
+            </p>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="mt-auto border-t border-slate-800 py-6 text-center text-xs text-slate-500">
+        <p>© Todos los derechos para Aldair Alexander Pérez Figueroa & Sandra Carolina Alfaro Palacio.</p>
+    </footer>
+
+    <!-- JS de Gráficos, Mapa y Lógica Dinámica -->
+    <script>
+        let chart1, chart2, map, heatLayerGroup;
+        let zonaActual = 'todos';
+
+        // Base de Datos Dinámica
+        const datasetSimulado = {
+            enero: {
+                todos: { kpis: { aleat: '92.1%', comb: '-15.4%', vrptw: '98.8%', geof: '5 alertas' }, costos: [13000, 12500, 12800, 12100, 12900], riesgo: [70, 30, 22, 35, 18], abc: [38, 22, 22, 18] },
+                urbano: { kpis: { aleat: '95.0%', comb: '-18.1%', vrptw: '99.2%', geof: '2 alertas' }, costos: [8500, 8100, 8300, 7900, 8000], riesgo: [55, 22, 15, 25, 12], abc: [45, 25, 18, 12] },
+                rural: { kpis: { aleat: '89.2%', comb: '-12.7%', vrptw: '98.4%', geof: '3 alertas' }, costos: [16000, 15500, 15800, 14900, 15200], riesgo: [85, 40, 28, 45, 25], abc: [30, 20, 28, 22] }
+            },
+            febrero: {
+                todos: { kpis: { aleat: '93.5%', comb: '-16.8%', vrptw: '99.0%', geof: '4 alertas' }, costos: [12500, 12000, 12200, 11800, 12100], riesgo: [68, 28, 20, 32, 16], abc: [39, 24, 21, 16] },
+                urbano: { kpis: { aleat: '96.1%', comb: '-19.2%', vrptw: '99.5%', geof: '1 alerta' }, costos: [8200, 7900, 8000, 7600, 7800], riesgo: [52, 21, 13, 23, 11], abc: [44, 26, 17, 13] },
+                rural: { kpis: { aleat: '90.8%', comb: '-14.3%', vrptw: '98.6%', geof: '3 alertas' }, costos: [15500, 15000, 15300, 14500, 14800], riesgo: [82, 38, 26, 42, 22], abc: [32, 21, 26, 21] }
+            },
+            marzo: {
+                todos: { kpis: { aleat: '94.8%', comb: '-18.2%', vrptw: '99.4%', geof: '3 alertas' }, costos: [12000, 11500, 11800, 11200, 11900], riesgo: [65, 25, 18, 30, 14], abc: [40, 25, 20, 15] },
+                urbano: { kpis: { aleat: '97.2%', comb: '-21.0%', vrptw: '99.8%', geof: '1 alerta' }, costos: [8000, 7800, 7900, 7500, 7600], riesgo: [50, 20, 12, 22, 10], abc: [46, 27, 15, 12] },
+                rural: { kpis: { aleat: '92.4%', comb: '-15.5%', vrptw: '99.0%', geof: '2 alertas' }, costos: [15000, 14800, 15200, 14100, 14900], riesgo: [80, 35, 25, 40, 20], abc: [34, 23, 25, 18] }
+            },
+            abril: {
+                todos: { kpis: { aleat: '95.6%', comb: '-19.5%', vrptw: '99.6%', geof: '2 alertas' }, costos: [11800, 11200, 11500, 10900, 11400], riesgo: [62, 23, 16, 28, 12], abc: [42, 26, 19, 13] },
+                urbano: { kpis: { aleat: '98.0%', comb: '-22.4%', vrptw: '99.9%', geof: '0 alertas' }, costos: [7800, 7500, 7600, 7200, 7300], riesgo: [48, 18, 10, 20, 8], abc: [48, 28, 14, 10] },
+                rural: { kpis: { aleat: '93.1%', comb: '-16.6%', vrptw: '99.2%', geof: '2 alertas' }, costos: [14600, 14200, 14500, 13800, 14100], riesgo: [76, 32, 22, 36, 18], abc: [36, 24, 24, 16] }
+            }
+        };
+
+        // Coordenadas de los Puntos de Calor por Zona
+        const puntosMapa = {
+            todos: [
+                [10.9685, -74.7813, 0.9], [10.9830, -74.8020, 0.8], [10.9500, -74.7700, 0.7],
+                [10.9200, -74.8100, 0.9], [10.9000, -74.8300, 0.6]
+            ],
+            urbano: [
+                [10.9685, -74.7813, 1.0], [10.9830, -74.8020, 0.9], [10.9900, -74.8150, 0.8]
+            ],
+            rural: [
+                [10.9200, -74.8100, 0.9], [10.9000, -74.8300, 0.8], [10.8800, -74.8500, 0.7]
+            ]
+        };
+
+        const tablaDatos = {
+            todos: [
+                { id: 'BRK-9012', valor: '$ 4.25 M', vrptw: '09:00 - 10:30 AM', pred: '12% (Muy Baja)', est: 'En Regla', estClass: 'text-emerald-400' },
+                { id: 'BRK-4401', valor: '$ 2.80 M', vrptw: '11:00 - 12:15 PM', pred: '22% (Baja)', est: 'En Regla', estClass: 'text-emerald-400' },
+                { id: 'BRK-7822', valor: '$ 8.10 M', vrptw: '01:30 - 02:45 PM', pred: '45% (Media)', est: 'Alerta Geofence', estClass: 'text-amber-400' }
+            ],
+            urbano: [
+                { id: 'BRK-9012', valor: '$ 4.25 M', vrptw: '09:00 - 10:30 AM', pred: '10% (Muy Baja)', est: 'En Regla', estClass: 'text-emerald-400' },
+                { id: 'BRK-4401', valor: '$ 2.80 M', vrptw: '11:00 - 12:15 PM', pred: '18% (Baja)', est: 'En Regla', estClass: 'text-emerald-400' }
+            ],
+            rural: [
+                { id: 'BRK-7822', valor: '$ 8.10 M', vrptw: '01:30 - 02:45 PM', pred: '45% (Media)', est: 'Alerta Geofence', estClass: 'text-amber-400' },
+                { id: 'BRK-3109', valor: '$ 1.95 M', vrptw: '03:00 - 04:30 PM', pred: '28% (Baja)', est: 'En Regla', estClass: 'text-emerald-400' }
+            ]
+        };
+
+        function initMap() {
+            try {
+                if (map) map.remove();
+                
+                map = L.map('mapaCalor', {
+                    center: [10.9500, -74.7900],
+                    zoom: 12,
+                    zoomControl: true
+                });
+
+                L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+                    maxZoom: 19,
+                    subdomains: 'abcd'
+                }).addTo(map);
+
+                heatLayerGroup = L.layerGroup().addTo(map);
+                renderMapPoints();
+                
+                setTimeout(() => { map.invalidateSize(); }, 400);
+            } catch (e) {
+                console.error("Error al cargar el mapa:", e);
+            }
+        }
+
+        function renderMapPoints() {
+            if (!heatLayerGroup) return;
+            heatLayerGroup.clearLayers();
+            const puntos = puntosMapa[zonaActual];
+            
+            puntos.forEach(p => {
+                L.circle([p[0], p[1]], {
+                    color: '#38bdf8',
+                    fillColor: '#ef4444',
+                    fillOpacity: p[2] * 0.6,
+                    radius: 900 * p[2]
+                }).addTo(heatLayerGroup);
+            });
+        }
+
+        function initCharts() {
+            const ctx1 = document.getElementById('chartBrechas').getContext('2d');
+            chart1 = new Chart(ctx1, {
+                type: 'line',
+                data: {
+                    labels: ['Semana 1', 'Semana 2', 'Semana 3', 'Semana 4', 'Semana 5'],
+                    datasets: [
+                        {
+                            label: 'Costo Operativo ($ USD)',
+                            data: datasetSimulado.marzo.todos.costos,
+                            borderColor: '#38bdf8',
+                            backgroundColor: 'rgba(56, 189, 248, 0.15)',
+                            yAxisID: 'y',
+                            fill: true,
+                            tension: 0.4
+                        },
+                        {
+                            label: 'Índice Predictibilidad (%)',
+                            data: datasetSimulado.marzo.todos.riesgo,
+                            borderColor: '#f43f5e',
+                            borderDash: [5, 5],
+                            yAxisID: 'y1',
+                            tension: 0.4
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: { type: 'linear', display: true, position: 'left', grid: { color: '#334155' }, ticks: { color: '#94a3b8' } },
+                        y1: { type: 'linear', display: true, position: 'right', grid: { drawOnChartArea: false }, ticks: { color: '#f43f5e', callback: v => v + '%' } },
+                        x: { grid: { color: '#334155' }, ticks: { color: '#94a3b8' } }
+                    },
+                    plugins: { legend: { labels: { color: '#f8fafc' } } }
+                }
+            });
+
+            const ctx2 = document.getElementById('chartPerfiles').getContext('2d');
+            chart2 = new Chart(ctx2, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Optimización Combustible', 'Mantenimiento Preventivo IoT', 'Reducción Horas Extras', 'Pólizas'],
+                    datasets: [{
+                        data: datasetSimulado.marzo.todos.abc,
+                        backgroundColor: ['#10b981', '#3b82f6', '#8b5cf6', '#f59e0b']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'right', labels: { color: '#f8fafc' } } }
+                }
+            });
+
+            renderTabla();
+        }
+
+        function aplicarFiltros() {
+            const mesSelect = document.getElementById('select-mes').value;
+            const dataActiva = datasetSimulado[mesSelect][zonaActual];
+
+            // Actualizar Tarjetas KPI Dinámicas
+            document.getElementById('kpi-aleatoriedad').innerText = dataActiva.kpis.aleat;
+            document.getElementById('kpi-combustible').innerText = dataActiva.kpis.comb;
+            document.getElementById('kpi-vrptw').innerText = dataActiva.kpis.vrptw;
+            document.getElementById('kpi-geofence').innerText = dataActiva.kpis.geof;
+
+            // Actualizar Gráficos
+            chart1.data.datasets[0].data = dataActiva.costos;
+            chart1.data.datasets[1].data = dataActiva.riesgo;
+            chart1.update();
+
+            chart2.data.datasets[0].data = dataActiva.abc;
+            chart2.update();
+
+            // Actualizar Mapa y Tabla
+            renderMapPoints();
+            renderTabla();
+        }
+
+        function cambiarZona(zona) {
+            zonaActual = zona;
+            ['todos', 'urbano', 'rural'].forEach(z => {
+                const btn = document.getElementById(`btn-${z}`);
+                if (z === zona) {
+                    btn.className = "px-3 py-1.5 text-xs font-semibold rounded-lg bg-blue-600 text-white transition";
+                } else {
+                    btn.className = "px-3 py-1.5 text-xs font-semibold rounded-lg text-slate-400 hover:text-white transition";
+                }
+            });
+            aplicarFiltros();
+        }
+
+        function renderTabla() {
+            const tbody = document.getElementById('tabla-cuerpo');
+            tbody.innerHTML = '';
+            
+            tablaDatos[zonaActual].forEach(f => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-800/50 transition";
+                tr.innerHTML = `
+                    <td class="p-3 font-medium text-white font-mono">${f.id}</td>
+                    <td class="p-3 font-mono text-blue-400">${f.valor}</td>
+                    <td class="p-3 text-slate-300">${f.vrptw}</td>
+                    <td class="p-3"><span class="bg-slate-900 px-2 py-0.5 rounded border border-slate-700">${f.pred}</span></td>
+                    <td class="p-3 ${f.estClass} font-semibold">${f.est}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function registrarInvestigador(event) {
+            event.preventDefault();
+            document.getElementById('formInvestigador').reset();
+            document.getElementById('mensajeExito').classList.remove('hidden');
+            setTimeout(() => {
+                document.getElementById('mensajeExito').classList.add('hidden');
+            }, 5000);
+        }
+
+        window.addEventListener('load', () => {
+            initMap();
+            initCharts();
+        });
+    </script>
+</body>
+</html>
